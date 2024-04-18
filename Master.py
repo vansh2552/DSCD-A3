@@ -18,10 +18,10 @@ import reducer_pb2
 import reducer_pb2_grpc
 import time
 
-MAPPERS = 2
-CENTROIDS = 2
-REDUCERS = 2
-ITERATIONS = 10
+MAPPERS = 3
+CENTROIDS = 3
+REDUCERS = 3
+ITERATIONS = 20
 DataForMappers = []
 Centroids = []
 
@@ -54,7 +54,6 @@ def call_mappers(Centroids,DataForMappers):
         stub = mapper_pb2_grpc.MapperServiceStub(channel)
         request = mapper_pb2.centroidUpdateRequest(points = DataForMappers[i],centroids=json.dumps(Centroids))
         response = stub.ReceiveCentroid(request)
-        print("partition from mapper")
         partition = json.loads(response.partition)
         for key in partition:
             if key in partitionForReducers:
@@ -88,9 +87,15 @@ if __name__ == "__main__":
 
     for i in range(ITERATIONS):
         partitions = call_mappers(Centroids,DataForMappers)
-        Centroids = call_reducers(partitions)
+        updated_Centroids = call_reducers(partitions)
+        if updated_Centroids == Centroids:
+            print("Converged after ",i," iterations")
+            break
+        else:
+            Centroids = updated_Centroids
         print("updated centroids after ",i," iterations ",Centroids)
 
+    print("Final centroids are ",Centroids)
 
 
 
