@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+service MapperService {
+    rpc ReceiveCentroid(centroidUpdateRequest) returns (partitionResponse);
+}
+
+
+message partitionResponse {
+    string partition = 1;
+}
+message centroidUpdateRequest {
+    repeated int32 points = 1;
+    string centroids = 2;
+}

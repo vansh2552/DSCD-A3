@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+service MasterService {
+    rpc PassPointsToMapper(id) returns (points);
+    rpc PassMappersToReducers(id) returns (mapperResponse);
+}
+
+message id {
+    int32 id = 1;
+}
+message points {
+    repeated int32 points = 1;
+    string centroids = 2;
+}
+message mapperResponse {
+    int32 mappers = 1;
+}
