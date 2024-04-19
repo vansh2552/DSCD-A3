@@ -83,6 +83,8 @@ def call_reducers(partitions,logger):
         logger.log("Recieved updated centroids from reducer at port " + str(port))
         
         centroids = json.loads(response.updated_centroid)
+
+        logger.log_reducers(f"Reducer {id} updated centroids {centroids}", id)
         updated_centroids.append(centroids)
     
     logger.log("Updated centroids received from reducer at port "+str(port)+" are "+str(updated_centroids))

@@ -9,8 +9,7 @@ import master_pb2_grpc, master_pb2
 from concurrent import futures
 import reducer_pb2
 import reducer_pb2_grpc
-from logger import Logger
-from time import sleep
+
 
 class Reducer(reducer_pb2_grpc.ReducerServiceServicer):
 
@@ -39,7 +38,6 @@ class Reducer(reducer_pb2_grpc.ReducerServiceServicer):
         self.intermediate_data = partitions
         updated_centroids = self.reduce()
         print("Sent updated centroids to master")
-        Logger.log_reducers(f"Reducer {id} updated centroids {updated_centroids}", id)
         return reducer_pb2.updated_centroids(updated_centroid = json.dumps(updated_centroids))
 
 def server(id):

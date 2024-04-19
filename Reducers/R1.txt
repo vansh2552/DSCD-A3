@@ -1,0 +1,1 @@
+Reducer 1 updated centroids [0.3, 7.225]

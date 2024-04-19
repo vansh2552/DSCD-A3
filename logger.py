@@ -35,6 +35,6 @@ class Logger:
         # in the reducer folder, create a file for each reducer
         # the file should be R{id+1}.txt
         # first create the txt file
-        file_path = os.path.join(self.reducer_folder, f"R{id+1}.txt")
+        file_path = os.path.join(self.reducer_folder, "R" + id+ ".txt")
         with open(file_path, 'w') as f:
             f.write(message + '\n')
