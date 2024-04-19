@@ -19,9 +19,9 @@ import reducer_pb2_grpc
 import time
 from logger import Logger
 
-MAPPERS = 1
-CENTROIDS = 1
-REDUCERS = 1
+MAPPERS = 4
+CENTROIDS = 4
+REDUCERS = 4
 ITERATIONS = 20
 DataForMappers = []
 Centroids = []
@@ -47,45 +47,75 @@ def GenerateCentroids(input_data, k):
     centroids = input_data[:k]
     return centroids
 
-def call_mappers(Centroids,DataForMappers,logger):
+def call_mappers(Centroids, DataForMappers, logger):
     partitionForReducers = {}
-    for i in range(MAPPERS):
-        port = 50051+i
-        channel = grpc.insecure_channel('localhost:'+str(port))
-        stub = mapper_pb2_grpc.MapperServiceStub(channel)
-        
-        request = mapper_pb2.centroidUpdateRequest(points = DataForMappers[i],centroids=json.dumps(Centroids))
-        logger.log("Sending data to mapper at port "+str(port))
-        
-        response = stub.ReceiveCentroid(request)
-        logger.log("Recieved partition from mapper at port "+str(port))
+    successful_requests = 0
 
-        partition = json.loads(response.partition)
-        for key in partition:
-            if key in partitionForReducers:
-                partitionForReducers[key].extend(partition[key])
-            else:
-                partitionForReducers[key] = partition[key]
+    for i in range(MAPPERS):
+        port = 50051 + i
+        channel = grpc.insecure_channel('localhost:' + str(port))
+        stub = mapper_pb2_grpc.MapperServiceStub(channel)
+
+        request = mapper_pb2.centroidUpdateRequest(points=DataForMappers[i], centroids=json.dumps(Centroids))
+        logger.log("Sending data to mapper at port " + str(port))
+
+        # Retry logic for fault tolerance
+        while True:
+            try:
+                if random.random() < 0.2:
+                    raise Exception("Mapper encountered an error and failed to complete the task")
+                
+                response = stub.ReceiveCentroid(request)
+                logger.log("Received partition from mapper at port " + str(port))
+
+                partition = json.loads(response.partition)
+                for key in partition:
+                    if key in partitionForReducers:
+                        partitionForReducers[key].extend(partition[key])
+                    else:
+                        partitionForReducers[key] = partition[key]
+
+                successful_requests += 1
+                break  # Break out of the retry loop if successful
+            except Exception as e:
+                logger.log(f"Failed to communicate with mapper at port {port}. Retrying...")
+                time.sleep(5)  # Wait for 1 second before retrying
+
+        # Break out of the loop if all requests have been processed
+
+
     return partitionForReducers
 
 def call_reducers(partitions,logger):
     updated_centroids = []
+    successful_requests = 0
+
     for i in range(REDUCERS):
         port = 50061 + i
         channel = grpc.insecure_channel('localhost:'+str(port))
         stub = reducer_pb2_grpc.ReducerServiceStub(channel)
         id = str(i+1)
-        
         request = reducer_pb2.partitionRequest(partition=json.dumps(partitions[id]), id=id)
         logger.log("Sending partitions to reducer at port " + str(port))
-
-        response = stub.RecievePartition(request)
-        logger.log("Recieved updated centroids from reducer at port " + str(port))
+        while True:
         
-        centroids = json.loads(response.updated_centroid)
+            try:
+                if random.random() < 0.2:
+                    raise Exception("Reducer encountered an error and failed to complete the task")
+                
+                response = stub.RecievePartition(request)
+                logger.log("Recieved updated centroids from reducer at port " + str(port))
+                
+                centroids = json.loads(response.updated_centroid)
 
-        logger.log_reducers(f"Reducer {id} updated centroids {centroids}", id)
-        updated_centroids.append(centroids)
+                logger.log_reducers(f"Reducer {id} updated centroids {centroids}", id)
+                updated_centroids.append(centroids)
+                successful_requests += 1
+                break
+            except Exception as e:
+                logger.log(f"Failed to communicate with reducer at port {port}. Retrying...")
+                time.sleep(5)
+
     
     logger.log("Updated centroids received from reducer at port "+str(port)+" are "+str(updated_centroids))
     return updated_centroids

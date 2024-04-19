@@ -68,9 +68,9 @@ class Mapper(mapper_pb2_grpc.MapperServiceServicer):
                 os.makedirs(folder_path)
             
             # Save points to a JSON file within the folder
-            partition_file = os.path.join(folder_path, f"partition_{cid}.json")
-            with open(partition_file, "w") as file:
-                json.dump(points, file)
+            # partition_file = os.path.join(folder_path, f"partition_{cid}.json")
+            # with open(partition_file, "w") as file:
+            #     json.dump(points, file)
 
             # Save points in a .txt file within the folder too, if the file does not exist, create it
             partition_file_txt = os.path.join(folder_path, f"partition_{cid}.txt")
