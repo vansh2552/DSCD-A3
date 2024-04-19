@@ -72,6 +72,12 @@ class Mapper(mapper_pb2_grpc.MapperServiceServicer):
             with open(partition_file, "w") as file:
                 json.dump(points, file)
 
+            # Save points in a .txt file within the folder too, if the file does not exist, create it
+            partition_file_txt = os.path.join(folder_path, f"partition_{cid}.txt")
+            with open(partition_file_txt, "w") as file:
+                for point in points:
+                    file.write(f"{point[0]},{point[1]}\n")
+
     def SendPartitions(self, request, context):
         id = request.id
         print(f"Sending partition {id} to reducer")

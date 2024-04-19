@@ -6,8 +6,8 @@ service ReducerService {
 
 message partitionRequest {
     string partition = 1;
+    string id = 2;
 }
 message updated_centroids{
     string updated_centroid = 1;
-    
 }

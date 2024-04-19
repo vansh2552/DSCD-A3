@@ -17,10 +17,11 @@ import mapper_pb2_grpc
 import reducer_pb2
 import reducer_pb2_grpc
 import time
+from logger import Logger
 
-MAPPERS = 3
-CENTROIDS = 3
-REDUCERS = 3
+MAPPERS = 1
+CENTROIDS = 1
+REDUCERS = 1
 ITERATIONS = 20
 DataForMappers = []
 Centroids = []
@@ -46,14 +47,19 @@ def GenerateCentroids(input_data, k):
     centroids = input_data[:k]
     return centroids
 
-def call_mappers(Centroids,DataForMappers):
+def call_mappers(Centroids,DataForMappers,logger):
     partitionForReducers = {}
     for i in range(MAPPERS):
         port = 50051+i
         channel = grpc.insecure_channel('localhost:'+str(port))
         stub = mapper_pb2_grpc.MapperServiceStub(channel)
+        
         request = mapper_pb2.centroidUpdateRequest(points = DataForMappers[i],centroids=json.dumps(Centroids))
+        logger.log("Sending data to mapper at port "+str(port))
+        
         response = stub.ReceiveCentroid(request)
+        logger.log("Recieved partition from mapper at port "+str(port))
+
         partition = json.loads(response.partition)
         for key in partition:
             if key in partitionForReducers:
@@ -62,39 +68,52 @@ def call_mappers(Centroids,DataForMappers):
                 partitionForReducers[key] = partition[key]
     return partitionForReducers
 
-def call_reducers(partitions):
+def call_reducers(partitions,logger):
     updated_centroids = []
     for i in range(REDUCERS):
         port = 50061 + i
         channel = grpc.insecure_channel('localhost:'+str(port))
         stub = reducer_pb2_grpc.ReducerServiceStub(channel)
         id = str(i+1)
-        request = reducer_pb2.partitionRequest(partition=json.dumps(partitions[id]))
+        
+        request = reducer_pb2.partitionRequest(partition=json.dumps(partitions[id]), id=id)
+        logger.log("Sending partitions to reducer at port " + str(port))
+
         response = stub.RecievePartition(request)
+        logger.log("Recieved updated centroids from reducer at port " + str(port))
+        
         centroids = json.loads(response.updated_centroid)
         updated_centroids.append(centroids)
+    
+    logger.log("Updated centroids received from reducer at port "+str(port)+" are "+str(updated_centroids))
     return updated_centroids
 
 
 
 if __name__ == "__main__":
-    
+    logger = Logger("dump.txt", "centroids.txt", "Reducers")
     with open("points.txt", "r") as file:
         input_data = [list(map(float, line.strip().split(','))) for line in file]
     
     Centroids = GenerateCentroids(input_data, CENTROIDS)
+    logger.log("Initial (random) Centroids are "+str(Centroids))
     DataForMappers = split_data_indexes(input_data)
 
     for i in range(ITERATIONS):
-        partitions = call_mappers(Centroids,DataForMappers)
-        updated_Centroids = call_reducers(partitions)
+        logger.log("\n")
+        logger.log("ITERATION "+str(i))
+        partitions = call_mappers(Centroids,DataForMappers,logger)
+        updated_Centroids = call_reducers(partitions,logger)
+        logger.log_centroids(updated_Centroids,i)
         if updated_Centroids == Centroids:
             print("Converged after ",i," iterations")
             break
         else:
             Centroids = updated_Centroids
+
         print("updated centroids after ",i," iterations ",Centroids)
 
+    logger.log("Converged after "+str(i)+" iterations")
     print("Final centroids are ",Centroids)
 
 
