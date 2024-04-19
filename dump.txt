@@ -1,4 +1,4 @@
-Initial (random) Centroids are [[0.5, 7.4]]
+Initial (random) Centroids are [[0.9, 9.7]]
 
 
 ITERATION 0
@@ -6,7 +6,7 @@ Sending data to mapper at port 50051
 Recieved partition from mapper at port 50051
 Sending partitions to reducer at port 50061
 Recieved updated centroids from reducer at port 50061
-Updated centroids received from reducer at port 50061 are [[0.3, 7.225]]
+Updated centroids received from reducer at port 50061 are [[0.9, 9.649999999999999]]
 
 
 ITERATION 1
@@ -14,5 +14,5 @@ Sending data to mapper at port 50051
 Recieved partition from mapper at port 50051
 Sending partitions to reducer at port 50061
 Recieved updated centroids from reducer at port 50061
-Updated centroids received from reducer at port 50061 are [[0.3, 7.225]]
+Updated centroids received from reducer at port 50061 are [[0.9, 9.649999999999999]]
 Converged after 1 iterations

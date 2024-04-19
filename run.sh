@@ -17,3 +17,18 @@ done
 
 # Run 1 instance of Master.py
 python3 Master.py
+
+# Wait for all processes to finish
+# now kill all the processes on the ports 50051 + 0/1/2/3
+# also kill all the processes on the ports 50061 + 0/1/2/3
+
+for i in {0..3}; do
+    lsof -ti tcp:5005${i} | xargs kill -9
+done
+
+# Kill processes on ports 50061 + 0/1/2/3
+for i in {0..3}; do
+    lsof -ti tcp:5006${i} | xargs kill -9
+done
+
+
